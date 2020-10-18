@@ -6,10 +6,11 @@
 # Does not fill in release date.
 
 import argparse
-import os.path
 from bs4 import BeautifulSoup
-import requests
 import csv
+import os.path
+import requests
+import time
 from imdb import IMDb
 
 imdb_access = IMDb()
@@ -45,6 +46,7 @@ def translate_type(kind):
         "tv movie": "tvMovie",
         "tv mini series": "tvMiniSeries",
         "tv short": "tvShort",
+        "episode": "tvEpisode"
     }
     return types[kind]
 
@@ -66,6 +68,7 @@ def main(letterboxd_file, imdbstyle_file):
         filmout.writerow(head)
 
         for idx, row in enumerate(letterboxd_films):
+            start = time.time()
             if idx > 0 and idx % 20 == 0:
                 print(str(idx) + " films processed.")
 
@@ -74,7 +77,6 @@ def main(letterboxd_file, imdbstyle_file):
             if not film:
                 print("Falling back to letterboxd scrape.")
                 film = get_movie_via_letterboxd(row[3])
-            print(f"found: {film['title']}, {film['year']}")
 
             # print(f"title: {film['title']}")
             # print(f"imdb rating: {film['rating']} ({film['votes']} votes)")
@@ -108,6 +110,9 @@ def main(letterboxd_file, imdbstyle_file):
                 '',
                 ', '.join(directors)
             ])
+
+            end = time.time()
+            print(f"processed: {film['title']}, {film['year']} in {end - start:.2f} seconds")
 
 
 if __name__ == '__main__':
