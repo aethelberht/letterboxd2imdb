@@ -5,14 +5,12 @@
 #
 # Does not fill in release date.
 
+import argparse
+import os.path
 from bs4 import BeautifulSoup
 import requests
 import csv
-# from datetime import date
 from imdb import IMDb
-
-LETTERBOXD_FILE = 'ratings.csv'
-IMDBSTYLE_FILE = 'ratings-imdbfy.csv'
 
 imdb_access = IMDb()
 
@@ -39,7 +37,7 @@ def get_movie_via_letterboxd(url):
 
 def translate_type(kind):
     # Convert kind returned by imdbpy to Title Type
-    # FIXME: tvSpecial is unsupported
+    # FIXME: tvSpecial is unsupported (assigned to movie instead)
     types = {
         "movie": "movie",
         "short": "short",
@@ -51,8 +49,8 @@ def translate_type(kind):
     return types[kind]
 
 
-def main():
-    with open(LETTERBOXD_FILE, newline='') as letterboxd:
+def main(letterboxd_file, imdbstyle_file):
+    with open(letterboxd_file, newline='') as letterboxd:
         # Expected letterboxd format:
         # Date,Name,Year,Letterboxd URI,Rating
         input_csv = csv.reader(letterboxd, delimiter=',', quotechar='"')
@@ -61,7 +59,7 @@ def main():
         for row in input_csv:
             letterboxd_films.append(row)
 
-    with open(IMDBSTYLE_FILE, 'w', newline='') as outfile:
+    with open(imdbstyle_file, 'w', newline='') as outfile:
         head = ["Const", "Your Rating", "Date Rated", "Title", "URL", "Title Type", "IMDb Rating", \
             "Runtime (mins)", "Year", "Genres", "Num Votes", "Release Date", "Directors"]
         filmout = csv.writer(outfile, quoting=csv.QUOTE_MINIMAL)
@@ -108,8 +106,19 @@ def main():
                 ', '.join(film['genres']),
                 film['votes'],
                 '',
-                ', '.join([d['name'] for d in film['directors']])
+                ', '.join(directors)
             ])
 
+
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", help="ratings file exported from letterboxd, ratings.csv by default",
+        metavar="FILE", default="ratings.csv")
+    parser.add_argument("-o", help="output file, output.csv by default",
+        metavar="FILE", default="output.csv")
+    args = parser.parse_args()
+    if not os.path.exists(args.i):
+        print(f"ERROR: {args.i} doesn't exist.")
+        quit()
+    else:
+        main(args.i, args.o)
