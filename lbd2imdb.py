@@ -32,7 +32,10 @@ def get_movie_via_letterboxd(url):
     # Scrapes letterboxd for imdb link
     lbxd_data = requests.get(url)
     lbxd_soup = BeautifulSoup(lbxd_data.text, features="lxml")
-    imdb_url = lbxd_soup.find(attrs={"data-track-action": "IMDb"})['href']
+    try:
+        imdb_url = lbxd_soup.find(attrs={"data-track-action": "IMDb"})['href']
+    except TypeError:
+        return None
     return imdb_access.get_movie(imdb_url.split('/')[4][2:])
 
 
@@ -61,6 +64,8 @@ def main(letterboxd_file, imdbstyle_file):
         for row in input_csv:
             letterboxd_films.append(row)
 
+    skipped = []
+
     with open(imdbstyle_file, 'w', newline='') as outfile:
         head = ["Const", "Your Rating", "Date Rated", "Title", "URL", "Title Type", "IMDb Rating", \
             "Runtime (mins)", "Year", "Genres", "Num Votes", "Release Date", "Directors"]
@@ -76,7 +81,15 @@ def main(letterboxd_file, imdbstyle_file):
             film = get_imdb_movie(title, year)
             if not film:
                 print("Falling back to letterboxd scrape.")
+                if row[3] == '':
+                    print(f"Warning: exported csv is missing letterboxd url for {title}, {year}. Skipping.")
+                    skipped.append(row[:] + ['missingLetterboxdUrl'])
+                    continue
                 film = get_movie_via_letterboxd(row[3])
+                if not film:
+                    print(f"Warning: Letterboxd page doesn't have a link to an IMDb entry. Skipping.")
+                    skipped.append(row[:] + ['missingImdbUrl'])
+                    continue
 
             # print(f"title: {film['title']}")
             # print(f"imdb rating: {film['rating']} ({film['votes']} votes)")
@@ -86,10 +99,14 @@ def main(letterboxd_file, imdbstyle_file):
             # print(f"url: http://www.imdb.com/title/tt{film.movieID}/")
             # print(f"genres: {', '.join(film['genres'])}")
             # print(f"type: {film['kind']} -> {translate_type(film['kind'])}")
-            if len(film['runtime']) > 1:
-                raise ValueError("Multiple runtimes found.")
+            if 'runtimes' not in film:
+                print(f"Warning: Runtime not found for {film['title']} id {film.movieID}. Leaving blank.")
+                runtime = ''
+            elif len(film['runtimes']) > 1:
+                print(f"Warning: Multiple runtimes found for {film['title']} id {film.movieID}. Skipping.")
+                skipped.append(row[:] + ['multipleRuntimes'])
             else:
-                runtime = int(film['runtime'][0])
+                runtime = int(film['runtimes'][0])
 
             if 'directors' in film:
                 directors = [d['name'] for d in film['directors']]
@@ -114,6 +131,9 @@ def main(letterboxd_file, imdbstyle_file):
             end = time.time()
             print(f"processed: {film['title']}, {film['year']} in {end - start:.2f} seconds")
 
+        print("\nProcessing finished. Here are the entries which were not converted due to errors:")
+        for row in skipped:
+            print(row)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
