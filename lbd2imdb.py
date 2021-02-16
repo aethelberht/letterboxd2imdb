@@ -113,6 +113,12 @@ def main(letterboxd_file, imdbstyle_file):
             else:
                 directors = []
 
+            if 'votes' in film:
+                votes = film['votes']
+            else:
+                votes = 0
+
+
             filmout.writerow([
                 f"tt{film.movieID}",
                 int(float(row[4]) * 2),
@@ -123,7 +129,7 @@ def main(letterboxd_file, imdbstyle_file):
                 runtime,
                 film['year'],
                 ', '.join(film['genres']),
-                film['votes'],
+                votes,
                 '',
                 ', '.join(directors)
             ])
