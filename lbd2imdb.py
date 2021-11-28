@@ -49,7 +49,8 @@ def translate_type(kind):
         "tv movie": "tvMovie",
         "tv mini series": "tvMiniSeries",
         "tv short": "tvShort",
-        "episode": "tvEpisode"
+        "episode": "tvEpisode",
+        "tv series": "tvseries"
     }
     return types[kind]
 
