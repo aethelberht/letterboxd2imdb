@@ -11,9 +11,9 @@ import csv
 import os.path
 import requests
 import time
-from imdb import IMDb
+from imdb import Cinemagoer
 
-imdb_access = IMDb()
+imdb_access = Cinemagoer()
 
 def get_imdb_movie(title, year):
     results = [r for r in imdb_access.search_movie(title) if r['title'] == title and 'year' in r and \
@@ -55,7 +55,7 @@ def translate_type(kind):
 
 
 def main(letterboxd_file, imdbstyle_file):
-    with open(letterboxd_file, newline='') as letterboxd:
+    with open(letterboxd_file, newline='', encoding='utf-8') as letterboxd:
         # Expected letterboxd format:
         # Date,Name,Year,Letterboxd URI,Rating
         input_csv = csv.reader(letterboxd, delimiter=',', quotechar='"')
